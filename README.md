@@ -116,7 +116,7 @@ pip install replicate
 > Next, run the following command
 
 ```bash
-streamlit run kllama-online.py
+streamlit run kllama_online.py
 ```
    
 <br>
