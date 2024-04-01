@@ -12,7 +12,9 @@
 
 <br>
 
-> The symbol {✅🦙} for Kllama stands for OK, Llama (or) Kunal's llama! 😁🙏
+> Author: Kunal Suri, Ph.D.
+>
+> Other Info: The symbol {✅🦙} for Kllama stands for OK, Llama (or) Kunal's llama! 😁🙏
 
 <br>
 
