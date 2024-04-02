@@ -32,19 +32,42 @@ This application can be executed in two ways: (1) using open-source LLM models f
 
 ### Prerequisites
 
-To use the Kllama App, you should do the following steps:
+To use the Kllama App, you need do the following steps:
 
-<br>
+1. **Download, Install and Run Ollama Application**
 
-1. Download and install [Ollama](https://ollama.com/) framework in your local machine
+   > The Ollama framework enables easy interaction between your chatbot and the LLM models from the convenience of your local machine.
    
-> The Ollama framework enables easy interaction between your chatbot and the LLM models from the convenience of your local machine
+   Kindly, follow the instructions from [Ollama](https://ollama.com/) website to download and install the framework in your local machine. Once Ollama is installed, you can run a local open-source LLM model from your machine. The general steps are given below:
 
-<br>
+   > (For more details and info please check: [Ollama](https://ollama.com/))
 
-2. Replicate the Git Repo in your local machine
 
-> We assume that you have cloned the Kllama repo on your local machine. If not, do the following:
+   - Download and Install Ollama app (Supported Platforms: Windows, Linux, MacOS)
+      
+      - For Window Users: Once Ollama application is downloaded, you will need to run the Ollama app from Programs
+      
+      - Once the Ollama app is running, go to commant prompt (CLI) and type:
+        
+        ```bash
+           Ollama list
+        ```
+        > Note: This command is used to list all the open-source LLM models available in your system locally. However, on the first run, then may be no LLM models in your system.
+
+    
+   - To download the LLM model, run the command
+     >  Ollama run <Model_Name>
+     
+       ```bash
+          Ollama run mistral
+       ```
+     
+     > This command will check if the model is available in the local repo on your machine, if not then it will fetch the LLM model from Ollama Website and then start running it.
+
+   
+2. **Replicate the Git Repo in your local machine**
+
+   > We assume that you have cloned the Kllama repo on your local machine. If not, do the following:
 
 ```bash
 git clone https://github.com/kunalsuri/kllama.git
@@ -52,17 +75,17 @@ git clone https://github.com/kunalsuri/kllama.git
 
 <br>
 
-3. Go to the folder containing Kllama and install the python packages needed to run the Kllama Chatbot
+⚠️ Recommendation: To keep their python installations for other projects clean, we recommend that the users create a new python virtual environment for the Kllama project and install the python packages via requirement.txt (in Step 3 below)
 
-> Kllama.py application needs the following packages: ollama, streamlit. They have been included to the requirements.txt and can be easily installed via the below command:
+<br>
+
+3. **Install the python packages needed to run the Kllama Chatbot**
+
+> Kllama.py application needs the following packages: ollama, streamlit. They have been included to the requirements.txt and can be easily installed. To install the packages, go to the folder containing Kllama and enter the below command:
 
 ```bash
 pip install -r requirements.txt
 ```
-
-<br>
-
-⚠️ Recommendation: we recommend that the users create a new python virtual environment and install the python packages via requirement.txt (in Step 3 above) to keep their python installation clean.
 
 <br>
 
@@ -91,7 +114,7 @@ streamlit run kllama.py
 
 <br>
 
-⚠️ Note: I'm not affiliated with [Replicate.com](https://replicate.com) company; I simply found their service interesting and decided to use it.
+⚠️ Note: We are not affiliated with [Replicate.com](https://replicate.com) company; I simply found their service interesting and decided to use it.
 
 <br>
 
