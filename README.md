@@ -39,8 +39,11 @@ The Kllama App runs on your local machine via Ollama framework. To use this app,
    
    Kindly, follow the instructions from [Ollama](https://ollama.com/) website to download and install the framework in your local machine. Once Ollama is installed, you can run a local open-source LLM model from your machine. The general steps are given below:
 
-   > (For more details and info please check: [Ollama](https://ollama.com/))
+   > (For more details and info please check: website: [Ollama](https://ollama.com/)) || **GitHub:** https://github.com/ollama/ollama
 
+<div align="center">
+  <img alt="ollama" height="200px" src="https://github.com/ollama/ollama/assets/3325447/0d0b44e2-8f4a-4e99-9b52-a5c1c741c8f7">
+</div>
 
    - Download and Install Ollama app (Supported Platforms: Windows, Linux, MacOS)
       
