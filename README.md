@@ -19,12 +19,11 @@
 <br>
 
 ## 🚀 How to use Kllama?
-This application can be executed in two ways: (1) using open-source LLM models from the local machines, or (2) using open-source LLM models providers online by services such as Replicate.com or HuggingFace.com
+This application will can be executed on your local machine using open-source LLM models via the Ollama framework
 
 ### Table of Contents
 1. [Prerequisites](#Prerequisites)
 2. [Running Kllama Locally via CLI](#Running-Kllama-Locally-CLI)
-3. [Running Kllama via Models Online](#Running-Kllama-Online)
 
 <br>
 
@@ -32,7 +31,7 @@ This application can be executed in two ways: (1) using open-source LLM models f
 
 ### Prerequisites
 
-To use the Kllama App, you need do the following steps:
+The Kllama App runs on your local machine via Ollama framework. To use this app, you need do the following steps:
 
 1. **Download, Install and Run Ollama Application**
 
@@ -103,50 +102,6 @@ streamlit run kllama.py
 ```
 
 ✅ Once executed, the Kllama Chatbot will start running on your web browser and will be ready for your use.
-
-<br>
-
----
-
-### Running Kllama via Models Online
-
-> Running Kllama online needs the user to have an account in webservices such as Replicate.com to use the open LLM models running there.
-
-<br>
-
-⚠️ Note: We are not affiliated with [Replicate.com](https://replicate.com) company; I simply found their service interesting and decided to use it.
-
-<br>
-
-#### Prerequisites for using models online
-1. Create an account in Replicate.com
-2. Get the API token from your Replicate.com
-3. Place the API token in the .streamlit/secrets.tom file
-   > REPLICATE_API_TOKEN = "PUT YOUT TOKEN HERE"
-
-<br>
-
-#### Running Kllama via Models deployed Online
-> To run the Kllama via command-line interface (CLI) first we need to install the replicate package via the following command:
-
-replicate
-```bash
-pip install replicate
-```
-
-<br>
-
-> Next, run the following command
-
-```bash
-streamlit run kllama_online.py
-```
-   
-<br>
-
-✅ Once configured and executed properly, the Kllama Chatbot will start running via the kllama-online.py app on your web browser and will be ready for your use.
-
-For the Kllama (online version), the user can use the Llama2-7B model or Llama2-13B model that is available in the [Replicate.com](https://replicate.com) website. There are some trial credits available to the user and then the user may need to pay, based on the rules from Replicate.com.
 
 <br>
 
