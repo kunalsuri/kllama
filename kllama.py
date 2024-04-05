@@ -4,7 +4,7 @@ import streamlit as st
 from datetime import datetime
 
 # App title
-st.title("✅🦙 Kllama: The Private Chatbot💬 unleashing the power of Open LLMs 💪")
+st.title("✅🦙 Kllama: Your Local & Private Chatbot💬💪")
 
 # Message with timestamp | NOT Used
 def format_message(sender, message, timestamp):
