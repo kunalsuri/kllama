@@ -1,4 +1,4 @@
-# ✅🦙Kllama: Your Private Chatbot :dependabot:
+# ✅🦙Kllama: Your Local & Private Chatbot :dependabot:
 
 ⚡ Your personal & private chatbot running on open LLM model(s) ⚡
 
