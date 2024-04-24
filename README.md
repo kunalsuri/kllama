@@ -110,6 +110,13 @@ streamlit run kllama.py
 
 ---
 
+## Further Reading on Llama | Meta
+- [Llama website](https://ai.meta.com/llama/)
+- [Llama technical overview](https://ai.meta.com/resources/models-and-libraries/llama/)
+- [Llama GitHub repo](https://github.com/facebookresearch/llama/tree/main)
+- [Llama 2 blog](https://ai.meta.com/blog/llama-2/)
+- [Llama 2 research article](https://ai.meta.com/research/publications/llama-2-open-foundation-and-fine-tuned-chat-models/)
+
 ## 🛡️Responsible AI 
 :european_union: **EU's Guidelines on the responsible use of generative AI in research:** https://research-and-innovation.ec.europa.eu/news/all-research-and-innovation-news/guidelines-responsible-use-generative-ai-research-developed-european-research-area-forum-2024-03-20_en
 
