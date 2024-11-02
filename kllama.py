@@ -37,10 +37,10 @@ with st.sidebar:
     st.session_state["model"] = st.selectbox("Choose a Model via Ollama Framework", models)
     model_chosen = st.session_state["model"]
 
-
-    st.sidebar.markdown("---")
-    st.subheader('Set Model Parameters')
-    temperature = st.sidebar.slider('temperature', min_value=0.01, max_value=5.0, value=0.1, step=0.01)
+    # The setup for temperature was not built
+    #st.sidebar.markdown("---")
+    #st.subheader('Set Model Parameters')
+    #temperature = st.sidebar.slider('temperature', min_value=0.01, max_value=1, value=0.1, step=0.1)
     
     st.sidebar.markdown("---")
     st.subheader('Chat History')
