@@ -1,91 +1,79 @@
-# Kllama Chat Bot for running open LLMs on local machine
-import ollama
 import streamlit as st
 from datetime import datetime
+import ollama
 
-# App title
 st.title("✅🦙 Kllama: Your Local & Private Chatbot💬💪")
 
-# Message with timestamp | NOT Used
+# Format function for chat messages
 def format_message(sender, message, timestamp):
     return f"[{timestamp.strftime('%Y-%m-%d %H:%M:%S')}] {sender}: {message}"
 
-# Initialising the chat history
+# Initialize chat history if not already set
 if "messages" not in st.session_state:
-    st.session_state["messages"] = []
+    st.session_state["messages"] = [{"role": "assistant", "content": "How may I assist you?"}]
 
-# Clear Chat history
+# Function to clear chat history
 def clear_chat_history():
-    st.session_state.messages = [{"role": "assistant", "content": "How may I assist you?"}]
+    st.session_state["messages"] = [{"role": "assistant", "content": "How may I assist you?"}]
 
-### App Sidebar Section Starts ###
+# Sidebar Settings
 with st.sidebar:
     st.title('✅🦙 Kllama Settings ⚙️')
-
-    # Get user settings
-    user_username = st.sidebar.text_input("Username", "Your Name")
+    user_username = st.text_input("Username", "Your Name")
+    st.markdown("---")
     
-    st.sidebar.markdown("---")
-
-    ## Initialising models
     st.subheader('Open LLM Models')
     if "model" not in st.session_state:
         st.session_state["model"] = ""
 
-    ## To select a LLM models from a list of available models
-    models = [model["name"] for model in ollama.list()["models"]]
-    st.session_state["model"] = st.selectbox("Choose a Model via Ollama Framework", models)
-    model_chosen = st.session_state["model"]
+    try:
+        # Retrieve the list of models from Ollama
+        response = ollama.list()
+        models = [model.model for model in response.models]
+        st.session_state["model"] = st.selectbox("Choose a Model via Ollama Framework", models)
+        model_chosen = st.session_state["model"]
+    except Exception as e:
+        st.write(f"An error occurred while retrieving models: {e}")
 
-    # The setup for temperature was not built
-    #st.sidebar.markdown("---")
-    #st.subheader('Set Model Parameters')
-    #temperature = st.sidebar.slider('temperature', min_value=0.01, max_value=1, value=0.1, step=0.1)
-    
-    st.sidebar.markdown("---")
+    st.markdown("---")
     st.subheader('Chat History')
-    st.sidebar.button('Click to Clear Chat History', on_click=clear_chat_history)
+    st.button('Click to Clear Chat History', on_click=clear_chat_history)
+    
+    st.markdown("---")
+    st.write(f"Logged in as: {user_username}")
+    st.markdown('📖 Opensource Code and ReadMe available via [Github Repo](https://github.com/kunalsuri/kllama/)!')
 
-    st.sidebar.markdown("---")
-    st.sidebar.write(f"Logged in as: {user_username}")
-    st.markdown('📖 Opensource Code and ReadMe available app via this [Github Repo](https://github.com/kunalsuri/kllama/)!')
-### App Sidebar Section Ends ###
-
-
-## Generator funtion to show the generated result of LLMs
+# Generator function for streaming model responses
 def model_result_generator():
+    full_response = ""
     stream = ollama.chat(
         model=st.session_state["model"],
         messages=st.session_state["messages"],
         stream=True,
     )
     for chunk in stream:
-        yield chunk["message"]["content"]
+        text = chunk["message"]["content"]
+        full_response += text
+        yield text
 
-## Display chat messages from history on app rerun
+# Display chat history on app rerun
 for message in st.session_state["messages"]:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Show the selected Model
-st.write("NOTE: You have selected the following LLM model via the Ollama Framework:  " + model_chosen)
+st.write(f"NOTE: You have selected the following LLM model via the Ollama Framework: {model_chosen}")
 
-# string_dialogue = "You only respond as 'Assistant. You do not pretend to be be a 'User' or respond as 'User'."
-## Input for the promt
+# Handle user input
 if prompt_input := st.chat_input("How may I assist you?"):
-
-    string_dialogue = ""
-    prompt = string_dialogue + prompt_input
-
-    # add latest message to history in format {role, content}
+    # Add the user message to chat history
     st.session_state["messages"].append({"role": "user", "content": prompt_input})
     
-    # Show the chat history on the page
     with st.chat_message("user"):
         st.markdown(prompt_input)
-
+    
+    # Generate and stream the assistant's response
     with st.chat_message("assistant"):
         with st.spinner("Thinking ..."):
+            # Stream the output with a typewriter effect and return the full text
             message = st.write_stream(model_result_generator())
             st.session_state["messages"].append({"role": "assistant", "content": message})
-
