@@ -111,14 +111,12 @@ python app_runner.py
 
 ## AI Transparency and Responsible Use
 
-
 ### Responsible Use of AI
 
-- Data Privacy: Prioritize local models for processing sensitive or educational data to ensure data sovereignty.
-- Human Validation: All AI-generated outputs are validated before integration into teaching, research, or decision-making workflows.
-- Compliance: This project aligns with the EU Guidance on Responsible Use of Generative AI in Research [EU guidance](https://research-and-innovation.ec.europa.eu/news/all-research-and-innovation-news/guidelines-responsible-use-generative-ai-research-developed-european-research-area-forum-2024-03-20_en)
+- **Data Privacy:** Prioritize local models for processing sensitive or educational data to ensure data sovereignty.
+- **Human Validation:** All AI-generated outputs are validated before integration into teaching, research, or decision-making workflows.
+- **Compliance:** This project aligns with <a href="https://research-and-innovation.ec.europa.eu/news/all-research-and-innovation-news/guidelines-responsible-use-generative-ai-research-developed-european-research-area-forum-2024-03-20_en" target="_blank" rel="noopener noreferrer">EU Guidance on Responsible Use of Generative AI in Research</a>.
 
 ### Development Disclosure
 
 This project was developed with assistance from the following AI tools: GitHub Copilot (Pro/Enterprise), Google's Antigravity IDE, Local Open-Weight Models (via Ollama in VS Code, e.g., Mistral). These tools were used primarily for code generation, completion, and debugging. All AI-assisted code was independently reviewed, tested, and refined by the authors. The authors take full responsibility for the correctness, security, and integrity of the codebase.
-
