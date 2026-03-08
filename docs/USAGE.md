@@ -53,13 +53,3 @@ Kllama stays relevant because it teaches durable GenAI patterns without hiding t
 - reproducible testing around pure helper logic.
 
 That is exactly the kind of project that ages well if it is maintained.
-
-## Responsible AI
-
-- Prefer local models for sensitive or educational data when possible.
-- Validate generated outputs before using them in teaching, research, or decision-making workflows.
-- Review the EU guidance on responsible generative AI use in research: [EU guidance](https://research-and-innovation.ec.europa.eu/news/all-research-and-innovation-news/guidelines-responsible-use-generative-ai-research-developed-european-research-area-forum-2024-03-20_en)
-
-## AI Usage Declaration
-
-Coding: GitHub Copilot (Pro/Enterprise), Google Antigravity, and open-weight models run via Ollama were used in Visual Studio Code to support development, primarily for code generation, completion, and debugging. All AI-assisted code was independently reviewed, tested, and refined by the authors. The authors take full responsibility for the correctness and integrity of the codebase.
