@@ -26,6 +26,17 @@ This preview is a lightweight repository asset that shows the intended app shape
 - Supports a system prompt and basic generation controls.
 - Exports the current chat as a Markdown transcript.
 
+## Documentation Map
+
+Use the shortest path for what you need:
+
+- [README.md](README.md): project overview, installation, and first run.
+- [docs/USAGE.md](docs/USAGE.md): usage notes, prompt examples, responsible AI guidance, and the AI usage declaration.
+- [docs/MAINTAINING.md](docs/MAINTAINING.md): development workflow, repository layout, contributor links, and release checks.
+- [CONTRIBUTING.md](CONTRIBUTING.md): pull request expectations.
+- [SECURITY.md](SECURITY.md): vulnerability reporting.
+- [CHANGELOG.md](CHANGELOG.md): change history.
+
 ## Quick Start
 
 Before creating the virtual environment, verify that your Python interpreter is 3.10 or newer:
@@ -89,125 +100,8 @@ python -m pip install -r requirements.txt
 python app_runner.py
 ```
 
-## Development
+## Further Reading
 
-Install development dependencies with editable mode:
-
-```bash
-python -m pip install -e .[dev]
-```
-
-Run the test suite:
-
-```bash
-pytest
-```
-
-See [CHANGELOG.md](CHANGELOG.md) for the maintenance history.
-See [docs/releases/0.2.0.md](docs/releases/0.2.0.md) for the prepared release notes body for the current maintenance refresh.
-
-## Community and Support
-
-- Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
-- Review [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for participation expectations.
-- Follow [SECURITY.md](SECURITY.md) for vulnerability reporting.
-- Dependabot is configured to open dependency update pull requests, and GitHub Actions CI runs tests for pushes and pull requests.
-
-## Release Smoke Test
-
-Before publishing a release, run one live manual smoke test against a real local Ollama instance:
-
-1. Start Ollama and confirm the server is reachable.
-2. Pull a test model such as `gemma3` if it is not already installed.
-3. Create a fresh virtual environment and install the project with `python -m pip install -e .[dev]`.
-4. Launch the app with `kllama` or `python app_runner.py`.
-5. Confirm that the model appears in the sidebar and can be selected.
-6. Send a simple prompt and verify that the response streams back successfully.
-7. Download a transcript and confirm the generated Markdown file contains the conversation metadata and messages.
-8. Run `pytest` and confirm the offline test suite still passes.
-
-## Repository Layout
-
-The top-level repository is intentionally small. New users usually only need to care about the following paths:
-
-- `kllama.py`: main Streamlit app.
-- `kllama_core.py`: pure helper logic for payload building, model parsing, and transcript export.
-- `app_runner.py`: lightweight launcher used by the installed `kllama` command.
-- `tests/`: offline pytest suite for app and helper behavior.
-- `docs/images/`: README preview assets.
-- `docs/releases/`: release notes and maintenance artifacts.
-- `.github/workflows/`: CI automation.
-- `.devcontainer/`: optional containerized development setup.
-- `.vscode/`: workspace settings for local development in VS Code.
-
-Local folders such as `.venv/`, `.pytest_cache/`, `.mypy_cache/`, and `__pycache__/` are generated during development and can be ignored or safely deleted when you want a cleaner workspace.
-
-## Project Notes
-
-- The app defaults to `http://localhost:11434` and can be pointed at another Ollama host from the UI.
-- Kllama is a deliberately small codebase meant for learning and experimentation, not a full chat platform.
-- The Streamlit app keeps the conversation in session state and sends the current transcript to Ollama on each turn.
-
-## Prompt Examples
-
-These sample prompts are intentionally student-friendly and show the kinds of local GenAI tasks Kllama was built to teach.
-
-### Summarization
-
-```text
-Summarize the following article in 5 bullet points for an undergraduate student. Keep the language simple and include one key takeaway.
-```
-
-### Tutoring
-
-```text
-Teach me the concept of gradient descent like I am new to machine learning. Start with intuition, then give a simple numerical example.
-```
-
-### Brainstorming
-
-```text
-I want to design a student project on local LLMs. Give me 5 project ideas with learning goals, required tools, and expected difficulty.
-```
-
-### Code Explanation
-
-```text
-Explain this Python function step by step. Then tell me what could go wrong at runtime and how to improve readability.
-```
-
-### Responsible Use
-
-```text
-Review this generated answer critically. Point out possible hallucinations, missing evidence, and what I should verify before trusting it.
-```
-
-## Why This Project Still Holds Up
-
-Kllama stays relevant because it teaches durable GenAI patterns without hiding them behind a heavyweight stack. A learner can inspect a few Python files and understand:
-
-- local model execution,
-- streamed token generation,
-- prompt conditioning,
-- chat state management,
-- reproducible testing around pure helper logic.
-
-That is exactly the kind of project that ages well if it is maintained.
-
-## Next Steps
-
-This is the current maintenance roadmap for Kllama.
-
-1. Replace the static preview asset with a real animated demo captured from the running app.
-2. Add richer multi-turn app tests that validate conversation flow and transcript export behavior.
-3. Add a few small lesson-plan examples showing how Kllama can be used in class.
-
-## Responsible AI
-
-- Prefer local models for sensitive or educational data when possible.
-- Validate generated outputs before using them in teaching, research, or decision-making workflows.
-- Review the EU guidance on responsible generative AI use in research: [EU guidance](https://research-and-innovation.ec.europa.eu/news/all-research-and-innovation-news/guidelines-responsible-use-generative-ai-research-developed-european-research-area-forum-2024-03-20_en)
-
-## AI Usage Declaration
-
-Coding: GitHub Copilot (Pro/Enterprise), Google Antigravity, and open-weight models run via Ollama were used in Visual Studio Code to support development, primarily for code generation, completion, and debugging. All AI-assisted code was independently reviewed, tested, and refined by the authors. The authors take full responsibility for the correctness and integrity of the codebase.
+- For usage notes, prompt examples, responsible AI guidance, and the AI usage declaration, see [docs/USAGE.md](docs/USAGE.md).
+- For development workflow, contributor links, repository layout, and release checks, see [docs/MAINTAINING.md](docs/MAINTAINING.md).
+- For release history, see [CHANGELOG.md](CHANGELOG.md) and [docs/releases/0.2.0.md](docs/releases/0.2.0.md).
