@@ -10,10 +10,12 @@ Install development dependencies with editable mode:
 python -m pip install -e .[dev]
 ```
 
-Run the test suite:
+Run the local verification suite:
 
 ```bash
+ruff check .
 pytest
+python -m build --sdist --wheel
 ```
 
 See [../CHANGELOG.md](../CHANGELOG.md) for the maintenance history.
@@ -37,7 +39,7 @@ Before publishing a release, run one live manual smoke test against a real local
 5. Confirm that the model appears in the sidebar and can be selected.
 6. Send a simple prompt and verify that the response streams back successfully.
 7. Download a transcript and confirm the generated Markdown file contains the conversation metadata and messages.
-8. Run `pytest` and confirm the offline test suite still passes.
+8. Run `ruff check .`, `pytest`, and `python -m build --sdist --wheel` and confirm they all pass.
 
 ## Repository Layout
 

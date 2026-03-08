@@ -36,9 +36,10 @@ python -m pip install -e .[dev]
 
 ## Running Checks
 
-Run the test suite before opening a pull request:
+Run the local checks before opening a pull request:
 
 ```bash
+ruff check .
 pytest
 ```
 

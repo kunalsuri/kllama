@@ -6,7 +6,10 @@
     "."
   ],
   "exclude": [
+    ".venv",
     "**/__pycache__",
+    "build",
+    "dist",
     ".pytest_cache",
     ".mypy_cache",
     "kllama.egg-info"

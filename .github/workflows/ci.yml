@@ -27,5 +27,14 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .[dev]
 
+      - name: Check dependency graph
+        run: python -m pip check
+
+      - name: Run lint checks
+        run: ruff check .
+
+      - name: Build distributions
+        run: python -m build --sdist --wheel
+
       - name: Run tests
         run: pytest

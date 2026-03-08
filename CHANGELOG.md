@@ -11,11 +11,13 @@ The project began earlier as a lightweight teaching tool for local GenAI workflo
 - A repository-hosted SVG preview asset for the README.
 - An interactive mocked Streamlit app test that submits a chat prompt and validates a streamed response.
 - Dependabot configuration for Python dependencies and GitHub Actions.
+- A launcher regression test that covers graceful shutdown on `KeyboardInterrupt`.
 
 ### Unreleased Changed
 
 - Updated the README roadmap to reflect completed maintenance items and remaining next steps.
 - Expanded CI to test Python 3.14 in addition to earlier supported versions.
+- Updated packaging metadata to use SPDX-style license declaration and expanded CI to run `pip check`, `ruff`, and distribution builds.
 
 ## [0.2.0] - 2026-03-08
 
