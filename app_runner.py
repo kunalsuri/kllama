@@ -1,12 +1,26 @@
-import os
-import subprocess
+from __future__ import annotations
 
-# Run Streamlit script using subprocess
-def run_streamlit():
-    streamlit_file = "kllama.py"  
-    subprocess.Popen(["streamlit", "run", streamlit_file])
+import subprocess
+import sys
+from pathlib import Path
+
+
+def run_streamlit() -> subprocess.Popen[bytes]:
+    streamlit_file = Path(__file__).with_name("kllama.py")
+    return subprocess.Popen(
+        [sys.executable, "-m", "streamlit", "run", str(streamlit_file)],
+        cwd=streamlit_file.parent,
+    )
+
+
+def main() -> int:
+    process = run_streamlit()
+    try:
+        return process.wait()
+    except KeyboardInterrupt:
+        process.terminate()
+        return process.wait()
+
 
 if __name__ == "__main__":
-    run_streamlit()
-
-# This Python script helps to run the kllama.py via the "Run Python File" botton in VS Code.
+    raise SystemExit(main())

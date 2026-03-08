@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kllama"
+version = "0.2.0"
+description = "A simple local-first Streamlit chatbot powered by Ollama."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "Kunal Suri, Ph.D." }
+]
+keywords = ["genai", "ollama", "streamlit", "chatbot", "local-ai", "llm"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Education",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Education",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+dependencies = [
+  "httpx>=0.28,<1",
+  "ollama>=0.6.1,<0.7",
+  "streamlit>=1.55,<2"
+]
+
+[project.urls]
+Homepage = "https://github.com/kunalsuri/kllama"
+Repository = "https://github.com/kunalsuri/kllama"
+
+[project.scripts]
+kllama = "app_runner:main"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9"
+]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+
+[tool.setuptools]
+py-modules = ["app_runner", "kllama", "kllama_core"]

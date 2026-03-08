@@ -1,0 +1,40 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="720" fill="#F4F1EA"/>
+  <rect x="28" y="28" width="1224" height="664" rx="28" fill="#FFFDF8" stroke="#1F2A1F" stroke-width="2"/>
+  <rect x="56" y="56" width="294" height="608" rx="24" fill="#183A2D"/>
+  <text x="86" y="112" fill="#FFF7E8" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="700">Kllama</text>
+  <text x="86" y="144" fill="#D9E7DE" font-family="Arial, Helvetica, sans-serif" font-size="18">Local-first GenAI for learning</text>
+
+  <rect x="82" y="188" width="242" height="58" rx="16" fill="#F7C66C"/>
+  <text x="102" y="224" fill="#1C231D" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">Model: gemma3</text>
+
+  <rect x="82" y="268" width="242" height="126" rx="18" fill="#244B3B"/>
+  <text x="102" y="304" fill="#FFF7E8" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">Generation</text>
+  <text x="102" y="340" fill="#D9E7DE" font-family="Arial, Helvetica, sans-serif" font-size="18">Temperature: 0.7</text>
+  <text x="102" y="370" fill="#D9E7DE" font-family="Arial, Helvetica, sans-serif" font-size="18">Top-p: 0.9</text>
+
+  <rect x="82" y="420" width="242" height="72" rx="18" fill="#244B3B"/>
+  <text x="102" y="462" fill="#FFF7E8" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">Transcript export</text>
+
+  <rect x="82" y="516" width="242" height="72" rx="18" fill="#244B3B"/>
+  <text x="102" y="558" fill="#FFF7E8" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">Clear chat</text>
+
+  <rect x="380" y="56" width="844" height="84" rx="22" fill="#F0E3CF"/>
+  <text x="412" y="106" fill="#182018" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700">Kllama classroom preview</text>
+
+  <rect x="410" y="176" width="772" height="108" rx="24" fill="#E5F1EB" stroke="#2F6A53" stroke-width="2"/>
+  <text x="442" y="220" fill="#1D3327" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">Student</text>
+  <text x="442" y="252" fill="#1D3327" font-family="Arial, Helvetica, sans-serif" font-size="24">Explain why local LLM workflows matter in education.</text>
+
+  <rect x="410" y="314" width="772" height="180" rx="24" fill="#FFF3D9" stroke="#D39A37" stroke-width="2"/>
+  <text x="442" y="358" fill="#4B3315" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">Kllama</text>
+  <text x="442" y="392" fill="#4B3315" font-family="Arial, Helvetica, sans-serif" font-size="24">Local models help students learn with more privacy, lower cost, and</text>
+  <text x="442" y="426" fill="#4B3315" font-family="Arial, Helvetica, sans-serif" font-size="24">clearer visibility into prompting, model choice, and response quality.</text>
+  <text x="442" y="460" fill="#4B3315" font-family="Arial, Helvetica, sans-serif" font-size="24">That makes Kllama a good teaching surface for practical GenAI.</text>
+
+  <rect x="410" y="528" width="772" height="84" rx="24" fill="#F7F4EE" stroke="#A29787" stroke-width="2"/>
+  <text x="442" y="578" fill="#4B4B4B" font-family="Arial, Helvetica, sans-serif" font-size="24">Ask Kllama something...</text>
+
+  <rect x="1062" y="544" width="92" height="52" rx="18" fill="#183A2D"/>
+  <text x="1087" y="576" fill="#FFF7E8" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">Send</text>
+</svg>

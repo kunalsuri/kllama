@@ -1,79 +1,176 @@
+from __future__ import annotations
+
+import os
+from typing import Iterator
+
+import httpx
 import streamlit as st
-from datetime import datetime
-import ollama
+from ollama import Client, ResponseError
 
-st.title("✅🦙 Kllama: Your Local & Private Chatbot💬💪")
+from kllama_core import (
+    build_chat_payload,
+    extract_message_text,
+    initial_chat_history,
+    list_model_names,
+    model_options,
+    transcript_as_markdown,
+)
 
-# Format function for chat messages
-def format_message(sender, message, timestamp):
-    return f"[{timestamp.strftime('%Y-%m-%d %H:%M:%S')}] {sender}: {message}"
+DEFAULT_OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+DEFAULT_SYSTEM_PROMPT = (
+    "You are Kllama, a helpful local AI assistant for students, builders, and "
+    "researchers. Respond clearly, stay grounded in the user's request, and say "
+    "when you are uncertain."
+)
 
-# Initialize chat history if not already set
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [{"role": "assistant", "content": "How may I assist you?"}]
 
-# Function to clear chat history
-def clear_chat_history():
-    st.session_state["messages"] = [{"role": "assistant", "content": "How may I assist you?"}]
+@st.cache_data(ttl=15, show_spinner=False)
+def fetch_models(ollama_host: str) -> list[str]:
+    response = Client(host=ollama_host).list()
+    return list_model_names(response)
 
-# Sidebar Settings
-with st.sidebar:
-    st.title('✅🦙 Kllama Settings ⚙️')
-    user_username = st.text_input("Username", "Your Name")
-    st.markdown("---")
-    
-    st.subheader('Open LLM Models')
-    if "model" not in st.session_state:
-        st.session_state["model"] = ""
 
-    try:
-        # Retrieve the list of models from Ollama
-        response = ollama.list()
-        models = [model.model for model in response.models]
-        st.session_state["model"] = st.selectbox("Choose a Model via Ollama Framework", models)
-        model_chosen = st.session_state["model"]
-    except Exception as e:
-        st.write(f"An error occurred while retrieving models: {e}")
+def reset_conversation() -> None:
+    st.session_state["messages"] = initial_chat_history()
 
-    st.markdown("---")
-    st.subheader('Chat History')
-    st.button('Click to Clear Chat History', on_click=clear_chat_history)
-    
-    st.markdown("---")
-    st.write(f"Logged in as: {user_username}")
-    st.markdown('📖 Opensource Code and ReadMe available via [Github Repo](https://github.com/kunalsuri/kllama/)!')
 
-# Generator function for streaming model responses
-def model_result_generator():
-    full_response = ""
-    stream = ollama.chat(
-        model=st.session_state["model"],
-        messages=st.session_state["messages"],
+def stream_reply(
+    ollama_client: Client,
+    model_name: str,
+    messages: list[dict[str, str]],
+    system_prompt: str,
+    options: dict[str, float | int],
+) -> Iterator[str]:
+    stream = ollama_client.chat(
+        model=model_name,
+        messages=build_chat_payload(messages, system_prompt),
+        options=options,
         stream=True,
     )
     for chunk in stream:
-        text = chunk["message"]["content"]
-        full_response += text
-        yield text
+        text = extract_message_text(chunk)
+        if text:
+            yield text
 
-# Display chat history on app rerun
+
+st.set_page_config(page_title="Kllama", page_icon="🦙", layout="wide")
+st.title("Kllama")
+st.caption(
+    "Local-first chat with Ollama. Started as a classroom project in 2024 and "
+    "still maintained as a lightweight GenAI teaching app."
+)
+
+if "messages" not in st.session_state:
+    reset_conversation()
+if "ollama_host" not in st.session_state:
+    st.session_state["ollama_host"] = DEFAULT_OLLAMA_HOST
+if "selected_model" not in st.session_state:
+    st.session_state["selected_model"] = ""
+if "system_prompt" not in st.session_state:
+    st.session_state["system_prompt"] = DEFAULT_SYSTEM_PROMPT
+if "username" not in st.session_state:
+    st.session_state["username"] = "Student"
+
+models: list[str] = []
+host = st.session_state["ollama_host"].strip() or DEFAULT_OLLAMA_HOST
+client = Client(host=host)
+
+with st.sidebar:
+    st.header("Session")
+    st.text_input("Username", key="username")
+    st.text_input(
+        "Ollama host",
+        key="ollama_host",
+        help="Use the default local server or point to another Ollama-compatible endpoint.",
+    )
+    if st.button("Refresh models", use_container_width=True):
+        fetch_models.clear()
+
+    try:
+        host = st.session_state["ollama_host"].strip() or DEFAULT_OLLAMA_HOST
+        client = Client(host=host)
+        models = fetch_models(host)
+    except (ResponseError, httpx.HTTPError) as error:
+        st.error(f"Unable to load models from Ollama: {error}")
+
+    if models:
+        if st.session_state["selected_model"] not in models:
+            st.session_state["selected_model"] = models[0]
+        st.selectbox(
+            "Model",
+            models,
+            key="selected_model",
+            help="The selected model is used for every prompt in this session.",
+        )
+    else:
+        st.selectbox("Model", ["No models detected"], disabled=True)
+        st.info("Start Ollama and pull a model such as `ollama pull gemma3`.")
+
+    st.markdown("---")
+    st.header("Generation")
+    temperature = st.slider("Temperature", min_value=0.0, max_value=2.0, value=0.7, step=0.1)
+    top_p = st.slider("Top-p", min_value=0.1, max_value=1.0, value=0.9, step=0.05)
+    max_tokens = st.slider("Max response tokens", min_value=64, max_value=4096, value=512, step=64)
+    st.text_area("System prompt", key="system_prompt", height=170)
+
+    st.markdown("---")
+    st.header("Conversation")
+    st.button("Clear chat", on_click=reset_conversation, use_container_width=True)
+    st.download_button(
+        "Download transcript",
+        data=transcript_as_markdown(
+            st.session_state["messages"],
+            st.session_state["username"],
+            st.session_state.get("selected_model") or "Not selected",
+        ),
+        file_name="kllama-transcript.md",
+        mime="text/markdown",
+        use_container_width=True,
+    )
+    st.caption("Source: https://github.com/kunalsuri/kllama")
+
+selected_model = st.session_state.get("selected_model", "")
+generation_options = model_options(temperature, top_p, max_tokens)
+
+metrics = st.columns(3)
+metrics[0].metric("Messages", len(st.session_state["messages"]))
+metrics[1].metric("Streaming", "On")
+metrics[2].metric("Model", selected_model or "Unavailable")
+
+st.write(
+    f"Connected to `{host}` with model `{selected_model or 'not selected'}`. "
+    "Responses are streamed directly from Ollama."
+)
+
 for message in st.session_state["messages"]:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-st.write(f"NOTE: You have selected the following LLM model via the Ollama Framework: {model_chosen}")
+if prompt := st.chat_input(
+    "Ask Kllama something",
+    disabled=not bool(selected_model),
+):
+    st.session_state["messages"].append({"role": "user", "content": prompt})
 
-# Handle user input
-if prompt_input := st.chat_input("How may I assist you?"):
-    # Add the user message to chat history
-    st.session_state["messages"].append({"role": "user", "content": prompt_input})
-    
     with st.chat_message("user"):
-        st.markdown(prompt_input)
-    
-    # Generate and stream the assistant's response
+        st.markdown(prompt)
+
     with st.chat_message("assistant"):
-        with st.spinner("Thinking ..."):
-            # Stream the output with a typewriter effect and return the full text
-            message = st.write_stream(model_result_generator())
-            st.session_state["messages"].append({"role": "assistant", "content": message})
+        try:
+            response_text = st.write_stream(
+                stream_reply(
+                    client,
+                    selected_model,
+                    st.session_state["messages"],
+                    st.session_state["system_prompt"],
+                    generation_options,
+                )
+            )
+        except (ResponseError, httpx.HTTPError) as error:
+            response_text = (
+                "I could not get a response from Ollama. Please verify that the server "
+                f"is running and the model is available. Details: {error}"
+            )
+            st.error(response_text)
+
+    st.session_state["messages"].append({"role": "assistant", "content": response_text})

@@ -1,125 +1,192 @@
-# ✅🦙Kllama: Your Local & Private Chatbot :dependabot:
+# Kllama
 
-⚡ Your personal & private chatbot running on open LLM model(s) ⚡
+A simple local-first chatbot built with Streamlit and Ollama.
 
-[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/kunalsuri)](https://twitter.com/kunalsuri)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![GitHub language count](https://img.shields.io/github/languages/count/kunalsuri/kllama)
 ![GitHub top language](https://img.shields.io/github/languages/top/kunalsuri/kllama?color=yellow)
 ![GitHub Repo stars](https://img.shields.io/github/stars/kunalsuri/kllama)
 
+Kllama started two years ago as a teaching project to help students understand what a practical local GenAI application looks like: model selection, prompt steering, streaming responses, and privacy-preserving inference on your own machine. It is intentionally small, but it is still maintained.
 
+That combination still matters. Before local LLM workflows became common, this project was already demonstrating a lightweight, private, and explainable path for working with generative AI in the classroom.
 
-<br>
+## Preview
 
-> Author: Kunal Suri, Ph.D.
->
-> Other Info: The symbol {✅🦙} for Kllama stands for OK, Llama (or) Kunal's llama! 😁🙏
+![Kllama preview](docs/images/kllama-demo.svg)
 
-<br>
+This preview is a lightweight repository asset that shows the intended app shape. A live demo capture can replace it later, but it already gives future visitors immediate visual context.
 
-## 🚀 How to use Kllama?
-This application will can be executed on your local machine using open-source LLM models via the Ollama framework
+## What Kllama Does
 
-### Table of Contents
-1. [Prerequisites](#Prerequisites)
-2. [Running Kllama Locally via CLI](#Running-Kllama-Locally-CLI)
+- Runs a local chat UI on top of Ollama.
+- Streams model responses in real time.
+- Lets you choose a local model from the sidebar.
+- Supports a system prompt and basic generation controls.
+- Exports the current chat as a Markdown transcript.
 
-<br>
+## Quick Start
 
----
+Before creating the virtual environment, verify that your Python interpreter is 3.10 or newer:
 
-### Prerequisites
+```bash
+python3 --version
+```
 
-The Kllama App runs on your local machine via Ollama framework. To use this app, you need do the following steps:
+If your `python3` command is older than 3.10, use a newer interpreter such as `python3.11` when creating the virtual environment. On older macOS installs, the default `python3` can still be 3.9.
 
-1. **Download, Install and Run Ollama Application**
+Treat code cloned from GitHub as untrusted until you have reviewed it. Best practice is to run repositories like this inside a sandboxed environment such as a disposable virtual machine, dev container, Docker container, or at minimum a dedicated Python virtual environment that does not share packages or secrets with your main setup. Do not install dependencies globally, do not run the project with `sudo`, and avoid exposing personal tokens, SSH keys, or other sensitive files inside the sandbox.
 
-   > The Ollama framework enables easy interaction between your chatbot and the LLM models from the convenience of your local machine.
-   
-   Kindly, follow the instructions from [Ollama](https://ollama.com/) website to download and install the framework in your local machine. Once Ollama is installed, you can run a local open-source LLM model from your machine. The general steps are given below:
+1. Install and start Ollama from [ollama.com](https://ollama.com/).
+   If your platform does not start Ollama automatically, run `ollama serve` in a separate terminal.
+1. Pull at least one model.
 
-   > (For more details and info please check: website: [Ollama](https://ollama.com/)) || **GitHub:** https://github.com/ollama/ollama
+```bash
+ollama pull gemma3
+ollama list
+```
 
-<div align="center">
-  <img alt="ollama" height="200px" src="https://github.com/ollama/ollama/assets/3325447/0d0b44e2-8f4a-4e99-9b52-a5c1c741c8f7">
-</div>
-
-   - Download and Install Ollama app (Supported Platforms: Windows, Linux, MacOS)
-      
-      - For Window Users: Once Ollama application is downloaded, you will need to run the Ollama app from Programs
-      
-      - Once the Ollama app is running, go to commant prompt (CLI) and type:
-        
-        ```bash
-           Ollama list
-        ```
-        > Note: This command is used to list all the open-source LLM models available in your system locally. However, on the first run, then may be no LLM models in your system.
-
-    
-   - To download the LLM model, run the command
-     >  Ollama run <Model_Name>
-     
-       ```bash
-          Ollama run mistral
-       ```
-     
-     > This command will check if the model is available in the local repo on your machine, if not then it will fetch the LLM model from Ollama Website and then start running it.
-
-   
-2. **Replicate the Git Repo in your local machine**
-
-   > We assume that you have cloned the Kllama repo on your local machine. If not, do the following:
+1. Clone the repository and create a virtual environment.
 
 ```bash
 git clone https://github.com/kunalsuri/kllama.git
+cd kllama
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-<br>
+On Windows PowerShell, activate the environment with:
 
-⚠️ Recommendation: To keep their python installations for other projects clean, we recommend that the users create a new python virtual environment for the Kllama project and install the python packages via requirement.txt (in Step 3 below)
-
-<br>
-
-3. **Install the python packages needed to run the Kllama Chatbot**
-
-> Kllama.py application needs the following packages: ollama, streamlit. They have been included to the requirements.txt and can be easily installed. To install the packages, go to the folder containing Kllama and enter the below command:
-
-```bash
-pip install -r requirements.txt
+```powershell
+.venv\Scripts\Activate.ps1
 ```
 
-<br>
-
----
-
-### Running Kllama Locally via CLI
-Kllama uses open-source LLM models running on your machine via the **Ollama** framework. To run these models, the user needs to install Ollama (as detailed in the Prerequisite section above). 
-
-We assume that you have installed the Ollama framework and downloaded the open LLM models such as [Mistral](https://mistral.ai/technology/#models), or Meta's [Llama 2](https://llama.meta.com/), [Codelama](https://ai.meta.com/blog/code-llama-large-language-model-coding/), to name just a few.
-
-> To run the Kllama via command-line interface (CLI) use the following command: 
+1. Install Kllama and its runtime dependencies.
 
 ```bash
+python -m pip install --upgrade pip
+python -m pip install -e .
+```
+
+1. Run the app.
+
+```bash
+kllama
+```
+
+You can also use either of the direct launch commands:
+
+```bash
+python app_runner.py
 streamlit run kllama.py
 ```
 
-✅ Once executed, the Kllama Chatbot will start running on your web browser and will be ready for your use.
+If you prefer installing from `requirements.txt`, it remains available:
 
-<br>
+```bash
+python -m pip install -r requirements.txt
+python app_runner.py
+```
 
----
+## Development
 
-## Further Reading on Llama | Meta
-- [Llama website](https://ai.meta.com/llama/)
-- [Llama technical overview](https://ai.meta.com/resources/models-and-libraries/llama/)
-- [Llama GitHub repo](https://github.com/facebookresearch/llama/tree/main)
-- [Llama 2 blog](https://ai.meta.com/blog/llama-2/)
-- [Llama 2 research article](https://ai.meta.com/research/publications/llama-2-open-foundation-and-fine-tuned-chat-models/)
+Install development dependencies with editable mode:
 
-## 🛡️Responsible AI 
-:european_union: **EU's Guidelines on the responsible use of generative AI in research:** https://research-and-innovation.ec.europa.eu/news/all-research-and-innovation-news/guidelines-responsible-use-generative-ai-research-developed-european-research-area-forum-2024-03-20_en
+```bash
+python -m pip install -e .[dev]
+```
 
-<br>
+Run the test suite:
 
-⚠️ Note: In no circumstance shall the author(s) or copyright holder(s) be held liable for any claim, damages, or other liabilities arising from the utilization of this code, which incorporates several code snippets generated by artificial intelligence (AI), along with open-source contributions from other programmers sourced from platforms including GitHub and other, pursuant to the terms outlined in the MIT License.
+```bash
+pytest
+```
+
+See [CHANGELOG.md](CHANGELOG.md) for the maintenance history.
+See [docs/releases/0.2.0.md](docs/releases/0.2.0.md) for the prepared release notes body for the current maintenance refresh.
+
+## Repository Layout
+
+The top-level repository is intentionally small. New users usually only need to care about the following paths:
+
+- `kllama.py`: main Streamlit app.
+- `kllama_core.py`: pure helper logic for payload building, model parsing, and transcript export.
+- `app_runner.py`: lightweight launcher used by the installed `kllama` command.
+- `tests/`: offline pytest suite for app and helper behavior.
+- `docs/images/`: README preview assets.
+- `docs/releases/`: release notes and maintenance artifacts.
+- `.github/workflows/`: CI automation.
+- `.devcontainer/`: optional containerized development setup.
+- `.vscode/`: workspace settings for local development in VS Code.
+
+Local folders such as `.venv/`, `.pytest_cache/`, `.mypy_cache/`, and `__pycache__/` are generated during development and can be ignored or safely deleted when you want a cleaner workspace.
+
+## Project Notes
+
+- The app defaults to `http://localhost:11434` and can be pointed at another Ollama host from the UI.
+- Kllama is a deliberately small codebase meant for learning and experimentation, not a full chat platform.
+- The Streamlit app keeps the conversation in session state and sends the current transcript to Ollama on each turn.
+
+## Prompt Examples
+
+These sample prompts are intentionally student-friendly and show the kinds of local GenAI tasks Kllama was built to teach.
+
+### Summarization
+
+```text
+Summarize the following article in 5 bullet points for an undergraduate student. Keep the language simple and include one key takeaway.
+```
+
+### Tutoring
+
+```text
+Teach me the concept of gradient descent like I am new to machine learning. Start with intuition, then give a simple numerical example.
+```
+
+### Brainstorming
+
+```text
+I want to design a student project on local LLMs. Give me 5 project ideas with learning goals, required tools, and expected difficulty.
+```
+
+### Code Explanation
+
+```text
+Explain this Python function step by step. Then tell me what could go wrong at runtime and how to improve readability.
+```
+
+### Responsible Use
+
+```text
+Review this generated answer critically. Point out possible hallucinations, missing evidence, and what I should verify before trusting it.
+```
+
+## Why This Project Still Holds Up
+
+Kllama stays relevant because it teaches durable GenAI patterns without hiding them behind a heavyweight stack. A learner can inspect a few Python files and understand:
+
+- local model execution,
+- streamed token generation,
+- prompt conditioning,
+- chat state management,
+- reproducible testing around pure helper logic.
+
+That is exactly the kind of project that ages well if it is maintained.
+
+## Next Steps
+
+This is the current maintenance roadmap for Kllama.
+
+1. Replace the static preview asset with a real animated demo captured from the running app.
+2. Add richer multi-turn app tests that validate conversation flow and transcript export behavior.
+3. Add a few small lesson-plan examples showing how Kllama can be used in class.
+
+## Responsible AI
+
+- Prefer local models for sensitive or educational data when possible.
+- Validate generated outputs before using them in teaching, research, or decision-making workflows.
+- Review the EU guidance on responsible generative AI use in research: [EU guidance](https://research-and-innovation.ec.europa.eu/news/all-research-and-innovation-news/guidelines-responsible-use-generative-ai-research-developed-european-research-area-forum-2024-03-20_en)
+
+## AI Usage Declaration
+
+Coding: GitHub Copilot (Pro/Enterprise), Google Antigravity, and open-weight models run via Ollama were used in Visual Studio Code to support development, primarily for code generation, completion, and debugging. All AI-assisted code was independently reviewed, tested, and refined by the authors. The authors take full responsibility for the correctness and integrity of the codebase.
