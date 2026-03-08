@@ -2,6 +2,7 @@
 
 A simple local-first chatbot built with Streamlit and Ollama.
 
+[![CI](https://github.com/kunalsuri/kllama/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kunalsuri/kllama/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![GitHub language count](https://img.shields.io/github/languages/count/kunalsuri/kllama)
 ![GitHub top language](https://img.shields.io/github/languages/top/kunalsuri/kllama?color=yellow)
@@ -104,6 +105,26 @@ pytest
 
 See [CHANGELOG.md](CHANGELOG.md) for the maintenance history.
 See [docs/releases/0.2.0.md](docs/releases/0.2.0.md) for the prepared release notes body for the current maintenance refresh.
+
+## Community and Support
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+- Review [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for participation expectations.
+- Follow [SECURITY.md](SECURITY.md) for vulnerability reporting.
+- Dependabot is configured to open dependency update pull requests, and GitHub Actions CI runs tests for pushes and pull requests.
+
+## Release Smoke Test
+
+Before publishing a release, run one live manual smoke test against a real local Ollama instance:
+
+1. Start Ollama and confirm the server is reachable.
+2. Pull a test model such as `gemma3` if it is not already installed.
+3. Create a fresh virtual environment and install the project with `python -m pip install -e .[dev]`.
+4. Launch the app with `kllama` or `python app_runner.py`.
+5. Confirm that the model appears in the sidebar and can be selected.
+6. Send a simple prompt and verify that the response streams back successfully.
+7. Download a transcript and confirm the generated Markdown file contains the conversation metadata and messages.
+8. Run `pytest` and confirm the offline test suite still passes.
 
 ## Repository Layout
 

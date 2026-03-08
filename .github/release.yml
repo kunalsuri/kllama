@@ -1,0 +1,23 @@
+changelog:
+  categories:
+    - title: App Improvements
+      labels:
+        - app
+        - enhancement
+        - feature
+    - title: Documentation
+      labels:
+        - documentation
+        - docs
+    - title: Testing and CI
+      labels:
+        - testing
+        - ci
+    - title: Maintenance
+      labels:
+        - chore
+        - dependencies
+        - maintenance
+  exclude:
+    labels:
+      - skip-changelog
