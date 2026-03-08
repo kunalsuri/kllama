@@ -114,10 +114,11 @@ python app_runner.py
 
 ### Responsible Use of AI
 
-- Prefer local models for sensitive or educational data when possible.
-- Validate generated outputs before using them in teaching, research, or decision-making workflows.
-- Review the EU guidance on responsible use of Generative AI in research: [EU guidance](https://research-and-innovation.ec.europa.eu/news/all-research-and-innovation-news/guidelines-responsible-use-generative-ai-research-developed-european-research-area-forum-2024-03-20_en)
+- Data Privacy: Prioritize local models for processing sensitive or educational data to ensure data sovereignty.
+- Human Validation: All AI-generated outputs are validated before integration into teaching, research, or decision-making workflows.
+- Compliance: This project aligns with the EU Guidance on Responsible Use of Generative AI in Research [EU guidance](https://research-and-innovation.ec.europa.eu/news/all-research-and-innovation-news/guidelines-responsible-use-generative-ai-research-developed-european-research-area-forum-2024-03-20_en)
 
 ### Development Disclosure
 
-This project was developed with assistance from GitHub Copilot (Pro/Enterprise), Google Antigravity, and open-weight models run locally via Ollama in Visual Studio Code, primarily for code generation, completion, and debugging. All AI-assisted code was independently reviewed, tested, and refined by the authors, who take full responsibility for the correctness and integrity of the codebase.
+This project was developed with assistance from the following AI tools: GitHub Copilot (Pro/Enterprise), Google's Antigravity IDE, Local Open-Weight Models (via Ollama in VS Code, e.g., Mistral). These tools were used primarily for code generation, completion, and debugging. All AI-assisted code was independently reviewed, tested, and refined by the authors. The authors take full responsibility for the correctness, security, and integrity of the codebase.
+
