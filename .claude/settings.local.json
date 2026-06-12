@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest -q)",
+      "Bash(python -m pip install -e \".[dev]\" -q)",
+      "Bash(python -m pytest tests/test_kllama_app.py::test_stream_reply_preserves_partial_output_on_midstream_error -q)",
+      "Bash(ruff check *)"
+    ]
+  }
+}

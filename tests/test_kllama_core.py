@@ -3,12 +3,14 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from kllama_core import (
+    DEFAULT_MAX_HISTORY_MESSAGES,
     build_chat_payload,
     extract_message_text,
     initial_chat_history,
     list_model_names,
     model_options,
     transcript_as_markdown,
+    trim_history,
 )
 
 
@@ -37,6 +39,33 @@ def test_build_chat_payload_prepends_system_prompt() -> None:
         {"role": "system", "content": "Be concise"},
         {"role": "user", "content": "Hello"},
     ]
+
+
+def test_trim_history_keeps_recent_tail() -> None:
+    messages = [{"role": "user", "content": str(i)} for i in range(5)]
+
+    assert trim_history(messages, max_messages=2) == [
+        {"role": "user", "content": "3"},
+        {"role": "user", "content": "4"},
+    ]
+
+
+def test_trim_history_keeps_everything_when_under_cap() -> None:
+    messages = [{"role": "user", "content": "only"}]
+
+    assert trim_history(messages, max_messages=10) == messages
+    assert trim_history(messages, max_messages=None) == messages
+
+
+def test_build_chat_payload_caps_history_but_keeps_system_prompt() -> None:
+    history = [{"role": "user", "content": str(i)} for i in range(50)]
+
+    payload = build_chat_payload(history, "Stay grounded")
+
+    assert payload[0] == {"role": "system", "content": "Stay grounded"}
+    # System prompt is not counted against the history cap.
+    assert len(payload) == DEFAULT_MAX_HISTORY_MESSAGES + 1
+    assert payload[-1] == {"role": "user", "content": "49"}
 
 
 def test_extract_message_text_supports_dict_and_object_chunks() -> None:

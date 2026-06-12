@@ -34,6 +34,41 @@ def test_streamlit_app_shows_model_load_error_when_ollama_fails() -> None:
     assert len(app.error) >= 1
 
 
+def test_stream_reply_preserves_partial_output_on_midstream_error() -> None:
+    from kllama import stream_reply
+
+    def failing_stream():
+        yield {"message": {"content": "Partial "}}
+        yield {"message": {"content": "answer"}}
+        raise httpx.ReadError("connection dropped")
+
+    fake_client = SimpleNamespace(chat=lambda **kwargs: failing_stream())
+
+    produced = list(
+        stream_reply(fake_client, "gemma3", [], "", {})
+    )
+
+    assert "".join(produced[:2]) == "Partial answer"
+    assert "Response interrupted" in produced[-1]
+
+
+def test_stream_reply_reraises_when_nothing_was_streamed() -> None:
+    from kllama import stream_reply
+
+    def immediately_failing_stream():
+        raise httpx.ConnectError("offline")
+        yield  # pragma: no cover - makes this a generator
+
+    fake_client = SimpleNamespace(chat=lambda **kwargs: immediately_failing_stream())
+
+    try:
+        list(stream_reply(fake_client, "gemma3", [], "", {}))
+    except httpx.HTTPError:
+        pass
+    else:  # pragma: no cover
+        raise AssertionError("expected the error to propagate")
+
+
 def test_streamlit_app_accepts_prompt_and_streams_mocked_response() -> None:
     app_path = Path(__file__).resolve().parents[1] / "kllama.py"
     mocked_response = SimpleNamespace(models=[SimpleNamespace(model="gemma3")])
