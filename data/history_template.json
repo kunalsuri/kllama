@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-06-23T18:13:22+02:00",
+  "username": "Student",
+  "model": "gemma3",
+  "system_prompt": "You are Kllama, a helpful local AI assistant for students, builders, and researchers. Respond clearly, stay grounded in the user's request, and say when you are uncertain.",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello Kllama!"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello! How can I help you today?"
+    }
+  ]
+}

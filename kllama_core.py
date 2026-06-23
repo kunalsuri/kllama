@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from typing import Any, Mapping, Sequence, TypedDict
+import json
+import datetime
+from pathlib import Path
 
 
 DEFAULT_ASSISTANT_GREETING = "How may I assist you?"
@@ -106,3 +109,128 @@ def transcript_as_markdown(
         lines.append("")
 
     return "\n".join(lines).strip() + "\n"
+
+
+def ensure_history_ignored(workspace_dir: str | Path) -> Path:
+    """Ensures that the chat-history folder exists and is strictly git ignored.
+    
+    1. Creates 'chat-history' directory in the workspace root.
+    2. Writes a '.gitignore' with '*' inside the 'chat-history' directory.
+    3. Checks the workspace root '.gitignore' and appends rules if not present.
+    """
+    workspace = Path(workspace_dir).resolve()
+    history_dir = workspace / "chat-history"
+    history_dir.mkdir(parents=True, exist_ok=True)
+    
+    # 1. Inner gitignore
+    inner_gitignore = history_dir / ".gitignore"
+    if not inner_gitignore.exists() or inner_gitignore.read_text(encoding="utf-8").strip() != "*":
+        inner_gitignore.write_text("*\n", encoding="utf-8")
+        
+    # 2. Main gitignore update
+    main_gitignore = workspace / ".gitignore"
+    if main_gitignore.exists():
+        content = main_gitignore.read_text(encoding="utf-8")
+        lines = content.splitlines()
+        has_rule = any("chat-history" in line.strip() and not line.strip().startswith("#") for line in lines)
+        if not has_rule:
+            # Append rules
+            with main_gitignore.open("a", encoding="utf-8") as f:
+                f.write("\n# Local chat history folder\nchat-history/\n/chat-history/\n")
+    else:
+        main_gitignore.write_text("# Local chat history folder\nchat-history/\n/chat-history/\n", encoding="utf-8")
+        
+    return history_dir
+
+
+def save_chat_history(
+    messages: list[dict[str, str]],
+    username: str,
+    model: str,
+    system_prompt: str,
+    chat_id: str,
+    workspace_dir: str | Path,
+) -> Path:
+    """Saves the active conversation to a timestamped JSON file in 'chat-history'."""
+    history_dir = ensure_history_ignored(workspace_dir)
+    file_path = history_dir / f"chat_history_{chat_id}.json"
+    
+    payload = {
+        "timestamp": datetime.datetime.now().isoformat(),
+        "username": username,
+        "model": model,
+        "system_prompt": system_prompt,
+        "messages": messages,
+    }
+    
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+        
+    return file_path
+
+
+def load_chat_history(file_path: Path) -> dict[str, Any]:
+    """Loads and returns chat history from a JSON file."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def list_chat_histories(workspace_dir: str | Path) -> list[dict[str, Any]]:
+    """Lists saved chat histories sorted by timestamp descending."""
+    history_dir = Path(workspace_dir).resolve() / "chat-history"
+    if not history_dir.exists():
+        return []
+        
+    histories = []
+    for file_path in history_dir.glob("chat_history_*.json"):
+        try:
+            data = load_chat_history(file_path)
+            # Extrapolate basic metadata
+            timestamp_str = data.get("timestamp", "")
+            username = data.get("username", "Student")
+            model = data.get("model", "Unknown Model")
+            messages = data.get("messages", [])
+            
+            # Find a preview snippet
+            snippet = ""
+            for msg in messages:
+                if msg.get("role") == "user":
+                    snippet = msg.get("content", "")
+                    break
+            if not snippet and messages:
+                snippet = messages[0].get("content", "")
+            if len(snippet) > 60:
+                snippet = snippet[:57] + "..."
+                
+            histories.append({
+                "file_path": str(file_path),
+                "chat_id": file_path.stem.replace("chat_history_", ""),
+                "timestamp": timestamp_str,
+                "username": username,
+                "model": model,
+                "snippet": snippet,
+                "messages_count": len(messages)
+            })
+        except Exception:
+            # Ignore malformed files
+            continue
+            
+    # Sort by timestamp descending. If timestamp is empty, fallback to file mtime.
+    def sort_key(item: dict[str, Any]) -> str:
+        t = item["timestamp"]
+        if not t:
+            try:
+                t = datetime.datetime.fromtimestamp(Path(item["file_path"]).stat().st_mtime).isoformat()
+            except Exception:
+                t = ""
+        return t
+        
+    histories.sort(key=sort_key, reverse=True)
+    return histories
+
+
+def delete_chat_history(file_path: Path | str) -> None:
+    """Deletes a chat history file."""
+    p = Path(file_path)
+    if p.exists():
+        p.unlink()
