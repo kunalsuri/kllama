@@ -234,3 +234,55 @@ def delete_chat_history(file_path: Path | str) -> None:
     p = Path(file_path)
     if p.exists():
         p.unlink()
+
+
+def build_translation_payload(
+    text: str,
+    src_lang: str,
+    target_lang: str,
+    tone: str,
+) -> list[dict[str, str]]:
+    """Builds a chat payload suitable for translation using Ollama."""
+    system_content = (
+        "You are a professional, high-fidelity translator. "
+        "Translate the user's text accurately. "
+        "Do not include any explanations, introduction, context, or extra text. "
+        "Output ONLY the final translated text."
+    )
+    
+    guidelines = []
+    if src_lang == "Detect Language":
+        guidelines.append("Detect the language of the source text.")
+    else:
+        guidelines.append(f"The source text is in {src_lang}.")
+        
+    guidelines.append(f"Translate the text into {target_lang}.")
+    
+    if tone == "Casual":
+        guidelines.append(
+            "Adopt a casual, informal, and conversational tone. "
+            "For languages with formal/informal distinctions (e.g., French 'tu' vs 'vous', "
+            "German 'du' vs 'Sie', Spanish 'tú' vs 'usted', Turkish 'sen' vs 'siz'), "
+            "you MUST use the informal/casual pronouns and verb conjugations (e.g., 'tu' in French)."
+        )
+    elif tone == "Formal":
+        guidelines.append(
+            "Adopt a formal, polite, and professional tone. "
+            "For languages with formal/informal distinctions (e.g., French 'tu' vs 'vous', "
+            "German 'du' vs 'Sie', Spanish 'tú' vs 'usted', Turkish 'sen' vs 'siz'), "
+            "you MUST use the formal/polite pronouns and verb conjugations (e.g., 'vous' in French)."
+        )
+    else:
+        guidelines.append("Use a natural, neutral, and standard tone appropriate for general translation.")
+        
+    user_content = (
+        f"Instructions:\n"
+        f"{' '.join(guidelines)}\n\n"
+        f"Text to translate:\n"
+        f"\"\"\"\n{text}\n\"\"\""
+    )
+    
+    return [
+        {"role": "system", "content": system_content},
+        {"role": "user", "content": user_content},
+    ]

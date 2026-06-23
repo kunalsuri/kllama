@@ -95,3 +95,37 @@ def test_streamlit_app_accepts_prompt_and_streams_mocked_response() -> None:
     messages = app.session_state["messages"]
     assert messages[-2]["content"] == "Explain local AI in one sentence"
     assert messages[-1]["content"] == "Local models keep the workflow private."
+
+
+def test_streamlit_app_renders_translator_tab_and_translates() -> None:
+    app_path = Path(__file__).resolve().parents[1] / "kllama.py"
+    mocked_response = SimpleNamespace(models=[SimpleNamespace(model="gemma3")])
+    
+    # Mocking translation response stream
+    streamed_chunks = iter(
+        [
+            {"message": {"content": "Hello"}},
+            {"message": {"content": ", how are you?"}},
+        ]
+    )
+
+    with patch.dict(os.environ, {"OLLAMA_HOST": "http://trans-test-host:11434"}):
+        with patch("ollama.Client.list", return_value=mocked_response):
+            with patch("ollama.Client.chat", return_value=streamed_chunks) as mocked_chat:
+                app = AppTest.from_file(str(app_path))
+                app.run()
+                
+                # Check default translator states
+                assert app.session_state["translator_src_lang"] == "French"
+                assert app.session_state["translator_target_lang"] == "English"
+                assert app.session_state["translator_tone"] == "Neutral"
+                
+                # Set input text to translate
+                app.text_area("translator_src_text_area").set_value("Bonjour, comment ça va ?").run()
+                
+                # Run translation
+                app.button("translator_submit_btn").click().run()
+                
+    assert not app.exception
+    assert app.session_state["translator_result"] == "Hello, how are you?"
+    mocked_chat.assert_called_once()

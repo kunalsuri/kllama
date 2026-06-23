@@ -11,6 +11,7 @@ from kllama_core import (
     model_options,
     transcript_as_markdown,
     trim_history,
+    build_translation_payload,
 )
 
 
@@ -99,3 +100,32 @@ def test_transcript_as_markdown_includes_metadata_and_messages() -> None:
     assert "- Model: gemma3" in transcript
     assert "## Kllama" in transcript
     assert "## Kunal" in transcript
+
+
+def test_build_translation_payload_detect_language() -> None:
+    payload = build_translation_payload("Bonjour", "Detect Language", "English", "Neutral")
+    assert len(payload) == 2
+    assert payload[0]["role"] == "system"
+    assert "professional, high-fidelity translator" in payload[0]["content"]
+    assert "Detect the language of the source text." in payload[1]["content"]
+    assert "Translate the text into English." in payload[1]["content"]
+    assert "Use a natural, neutral, and standard tone" in payload[1]["content"]
+    assert "Bonjour" in payload[1]["content"]
+
+
+def test_build_translation_payload_specific_languages() -> None:
+    payload = build_translation_payload("Hello", "English", "French", "Neutral")
+    assert "The source text is in English." in payload[1]["content"]
+    assert "Translate the text into French." in payload[1]["content"]
+
+
+def test_build_translation_payload_casual_tone() -> None:
+    payload = build_translation_payload("Please sit down", "English", "French", "Casual")
+    assert "Adopt a casual, informal, and conversational tone." in payload[1]["content"]
+    assert "informal/casual pronouns" in payload[1]["content"]
+
+
+def test_build_translation_payload_formal_tone() -> None:
+    payload = build_translation_payload("Please sit down", "English", "French", "Formal")
+    assert "Adopt a formal, polite, and professional tone." in payload[1]["content"]
+    assert "formal/polite pronouns" in payload[1]["content"]

@@ -22,6 +22,7 @@ from kllama_core import (
     load_chat_history,
     list_chat_histories,
     delete_chat_history,
+    build_translation_payload,
 )
 
 DEFAULT_OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
@@ -312,6 +313,16 @@ def main() -> None:
         st.session_state["system_prompt"] = DEFAULT_SYSTEM_PROMPT
     if "username" not in st.session_state:
         st.session_state["username"] = "Student"
+    if "translator_src_lang" not in st.session_state:
+        st.session_state["translator_src_lang"] = "French"
+    if "translator_target_lang" not in st.session_state:
+        st.session_state["translator_target_lang"] = "English"
+    if "translator_tone" not in st.session_state:
+        st.session_state["translator_tone"] = "Neutral"
+    if "translator_result" not in st.session_state:
+        st.session_state["translator_result"] = ""
+    if "show_translator" not in st.session_state:
+        st.session_state["show_translator"] = True
 
     # Process pending chat load before rendering any widgets
     if st.session_state["pending_chat_load"] is not None:
@@ -363,6 +374,7 @@ def main() -> None:
                 key="ollama_host",
                 help="Use the default local server or point to another Ollama-compatible endpoint.",
             )
+            st.checkbox("Show Translator Tab", key="show_translator")
             if st.button("Refresh models", use_container_width=True):
                 fetch_models.clear()
 
@@ -443,80 +455,213 @@ def main() -> None:
     selected_model = st.session_state.get("selected_model", "")
     generation_options = model_options(temperature, top_p, max_tokens)
 
-    # Main dashboard metrics
-    metrics = st.columns(3)
-    metrics[0].metric("Messages", len(st.session_state["messages"]))
-    metrics[1].metric("Streaming", "On")
-    metrics[2].metric("Model", selected_model or "Unavailable")
-
-    # Dynamic status bar with breathing animation dot
-    if is_connected:
-        status_html = f"""
-        <div class="status-bar status-connected">
-            <span class="status-dot dot-online"></span>
-            <span class="status-text">Connected to host <code>{host}</code> using model <code>{selected_model or 'None'}</code>. Streaming responses.</span>
-        </div>
-        """
+    show_translator = st.session_state.get("show_translator", True)
+    if show_translator:
+        tab_chat, tab_translator = st.tabs(["💬 Chat", "🌐 Translator"])
     else:
-        status_html = f"""
-        <div class="status-bar status-disconnected">
-            <span class="status-dot dot-offline"></span>
-            <span class="status-text">Disconnected from Ollama server at <code>{host}</code>. Please check server status.</span>
-        </div>
-        """
-    st.markdown(status_html, unsafe_allow_html=True)
+        tab_chat = st.container()
+        tab_translator = None
 
-    for message in st.session_state["messages"]:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    with tab_chat:
+        # Main dashboard metrics
+        metrics = st.columns(3)
+        metrics[0].metric("Messages", len(st.session_state["messages"]))
+        metrics[1].metric("Streaming", "On")
+        metrics[2].metric("Model", selected_model or "Unavailable")
 
-    if prompt := st.chat_input(
-        "Ask Kllama something",
-        disabled=not bool(selected_model),
-    ):
-        if st.session_state.get("current_chat_id") is None:
-            st.session_state["current_chat_id"] = f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+        # Dynamic status bar with breathing animation dot
+        if is_connected:
+            status_html = f"""
+            <div class="status-bar status-connected">
+                <span class="status-dot dot-online"></span>
+                <span class="status-text">Connected to host <code>{host}</code> using model <code>{selected_model or 'None'}</code>. Streaming responses.</span>
+            </div>
+            """
+        else:
+            status_html = f"""
+            <div class="status-bar status-disconnected">
+                <span class="status-dot dot-offline"></span>
+                <span class="status-text">Disconnected from Ollama server at <code>{host}</code>. Please check server status.</span>
+            </div>
+            """
+        st.markdown(status_html, unsafe_allow_html=True)
 
-        st.session_state["messages"].append({"role": "user", "content": prompt})
-        save_chat_history(
-            st.session_state["messages"],
-            st.session_state["username"],
-            selected_model,
-            st.session_state["system_prompt"],
-            st.session_state["current_chat_id"],
-            workspace_dir
-        )
+        for message in st.session_state["messages"]:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-        with st.chat_message("user"):
-            st.markdown(prompt)
+        if prompt := st.chat_input(
+            "Ask Kllama something",
+            disabled=not bool(selected_model),
+        ):
+            if st.session_state.get("current_chat_id") is None:
+                st.session_state["current_chat_id"] = f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
 
-        with st.chat_message("assistant"):
-            try:
-                response_text = st.write_stream(
-                    stream_reply(
-                        client,
-                        selected_model,
-                        st.session_state["messages"],
-                        st.session_state["system_prompt"],
-                        generation_options,
+            st.session_state["messages"].append({"role": "user", "content": prompt})
+            save_chat_history(
+                st.session_state["messages"],
+                st.session_state["username"],
+                selected_model,
+                st.session_state["system_prompt"],
+                st.session_state["current_chat_id"],
+                workspace_dir
+            )
+
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            with st.chat_message("assistant"):
+                try:
+                    response_text = st.write_stream(
+                        stream_reply(
+                            client,
+                            selected_model,
+                            st.session_state["messages"],
+                            st.session_state["system_prompt"],
+                            generation_options,
+                        )
                     )
-                )
-            except OLLAMA_ERRORS as error:
-                response_text = (
-                    "I could not get a response from Ollama. Please verify that the server "
-                    f"is running and the model is available. Details: {error}"
-                )
-                st.error(response_text)
+                except OLLAMA_ERRORS as error:
+                    response_text = (
+                        "I could not get a response from Ollama. Please verify that the server "
+                        f"is running and the model is available. Details: {error}"
+                    )
+                    st.error(response_text)
 
-        st.session_state["messages"].append({"role": "assistant", "content": response_text})
-        save_chat_history(
-            st.session_state["messages"],
-            st.session_state["username"],
-            selected_model,
-            st.session_state["system_prompt"],
-            st.session_state["current_chat_id"],
-            workspace_dir
-        )
+            st.session_state["messages"].append({"role": "assistant", "content": response_text})
+            save_chat_history(
+                st.session_state["messages"],
+                st.session_state["username"],
+                selected_model,
+                st.session_state["system_prompt"],
+                st.session_state["current_chat_id"],
+                workspace_dir
+            )
+
+    if show_translator and tab_translator is not None:
+        with tab_translator:
+            st.markdown("### 🌐 Instant Language Translator")
+            
+            # Tone options and active model indication
+            col_tone, col_model_info = st.columns([2, 1])
+            with col_tone:
+                tone = st.radio(
+                    "Tone Options",
+                    options=["Neutral", "Casual", "Formal"],
+                    key="translator_tone",
+                    horizontal=True,
+                    help="Select Casual to use informal address (like French 'tu') or Formal to use polite address (like French 'vous')."
+                )
+            with col_model_info:
+                st.markdown(
+                    f"<div style='border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 8px; font-size: 0.9rem; text-align: center; background-color: var(--card-bg);'>"
+                    f"Active Model: <code style='color: var(--theme-primary);'>{selected_model or 'None Selected'}</code>"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
+
+            # Language list config
+            languages = ["English", "French", "Turkish", "German", "Spanish"]
+            src_languages = ["Detect Language"] + languages
+            
+            # Form layout: Source Panel, Middle Swap Button, Target Panel
+            col_src, col_swap, col_tgt = st.columns([10, 1, 10])
+            
+            with col_src:
+                src_lang = st.selectbox(
+                    "Translate from",
+                    options=src_languages,
+                    key="translator_src_lang"
+                )
+                src_text = st.text_area(
+                    "Source Text",
+                    placeholder="Enter text to translate...",
+                    height=200,
+                    key="translator_src_text_area"
+                )
+                # Show character count
+                st.caption(f"Characters: {len(src_text or '')} / 5000")
+                
+            with col_swap:
+                # Spacer to push swap button down to align with dropdowns
+                st.markdown("<div style='height: 45px;'></div>", unsafe_allow_html=True)
+                is_swap_disabled = st.session_state["translator_src_lang"] == "Detect Language"
+                if st.button("↔️", key="translator_swap_btn", help="Swap languages", disabled=is_swap_disabled, use_container_width=True):
+                    temp = st.session_state["translator_src_lang"]
+                    st.session_state["translator_src_lang"] = st.session_state["translator_target_lang"]
+                    st.session_state["translator_target_lang"] = temp
+                    st.rerun()
+
+            with col_tgt:
+                # Filter out selected source language if it's in the target list
+                current_src_lang = st.session_state["translator_src_lang"]
+                tgt_options = [lang for lang in languages if lang != current_src_lang]
+                if not tgt_options:
+                    tgt_options = languages
+                
+                # Safeguard current selection index
+                if st.session_state["translator_target_lang"] not in tgt_options:
+                    st.session_state["translator_target_lang"] = tgt_options[0]
+                    
+                target_lang = st.selectbox(
+                    "Translate to",
+                    options=tgt_options,
+                    key="translator_target_lang"
+                )
+                
+                # Output text area placeholder
+                target_placeholder = st.empty()
+                target_placeholder.text_area(
+                    "Translation Result",
+                    value=st.session_state["translator_result"],
+                    height=200,
+                    disabled=True,
+                )
+
+            # Translation actions: Clear and Translate
+            col_clr, col_trans = st.columns([1, 3])
+            with col_clr:
+                if st.button("🧹 Clear", key="translator_clear_btn", use_container_width=True):
+                    st.session_state["translator_src_text_area"] = ""
+                    st.session_state["translator_result"] = ""
+                    st.rerun()
+            with col_trans:
+                is_trans_disabled = not bool(selected_model) or not src_text.strip()
+                if st.button("Translate 🌐", key="translator_submit_btn", type="primary", use_container_width=True, disabled=is_trans_disabled):
+                    try:
+                        # Build the request messages using the core utility function
+                        translation_payload = build_translation_payload(
+                            src_text,
+                            src_lang,
+                            target_lang,
+                            st.session_state["translator_tone"]
+                        )
+                        
+                        # Show spinner and run translation with stream=True
+                        with st.spinner("Translating..."):
+                            stream = client.chat(
+                                model=selected_model,
+                                messages=translation_payload,
+                                options={"temperature": 0.3},
+                                stream=True,
+                            )
+                            
+                            translated_text = ""
+                            for chunk in stream:
+                                chunk_text = extract_message_text(chunk)
+                                if chunk_text:
+                                    translated_text += chunk_text
+                                    target_placeholder.text_area(
+                                        "Translation Result",
+                                        value=translated_text,
+                                        height=200,
+                                        disabled=True,
+                                    )
+                                    
+                            st.session_state["translator_result"] = translated_text
+                            st.rerun()
+                    except OLLAMA_ERRORS as error:
+                        st.error(f"Translation failed: {error}")
 
 
 if __name__ == "__main__":
