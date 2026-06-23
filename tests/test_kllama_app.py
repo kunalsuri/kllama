@@ -128,4 +128,71 @@ def test_streamlit_app_renders_translator_tab_and_translates() -> None:
                 
     assert not app.exception
     assert app.session_state["translator_result"] == "Hello, how are you?"
-    mocked_chat.assert_called_once()
+    mocked_chat.assert_called_once()
+
+
+def test_fetch_lmstudio_models_success() -> None:
+    from kllama import fetch_lmstudio_models
+    mock_response = SimpleNamespace(
+        status_code=200,
+        json=lambda: {"data": [{"id": "meta-llama-3-8b-instruct"}, {"id": "mistral-7b"}]},
+        raise_for_status=lambda: None
+    )
+    with patch("httpx.get", return_value=mock_response) as mock_get:
+        fetch_lmstudio_models.clear()
+        models = fetch_lmstudio_models("http://localhost:1234")
+        assert models == ["meta-llama-3-8b-instruct", "mistral-7b"]
+        mock_get.assert_called_once_with("http://localhost:1234/v1/models", timeout=5.0)
+
+
+def test_stream_reply_lmstudio() -> None:
+    from kllama import stream_reply_lmstudio
+    
+    class FakeResponse:
+        def __init__(self):
+            pass
+        def raise_for_status(self):
+            pass
+        def iter_lines(self):
+            yield "data: {\"choices\": [{\"delta\": {\"content\": \"Hello \"}}]}"
+            yield "data: {\"choices\": [{\"delta\": {\"content\": \"world!\"}}]}"
+            yield "data: [DONE]"
+        def __enter__(self):
+            return self
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            pass
+            
+    with patch("httpx.stream", return_value=FakeResponse()) as mock_stream:
+        generator = stream_reply_lmstudio(
+            lmstudio_host="http://localhost:1234",
+            model_name="meta-llama-3-8b-instruct",
+            messages=[{"role": "user", "content": "hi"}],
+            system_prompt="be helpful",
+            options={"num_predict": 100, "temperature": 0.7, "top_p": 0.9}
+        )
+        res = "".join(generator)
+        assert res == "Hello world!"
+        mock_stream.assert_called_once()
+
+
+def test_streamlit_app_with_lmstudio_enabled() -> None:
+    app_path = Path(__file__).resolve().parents[1] / "kllama.py"
+    mocked_ollama_response = SimpleNamespace(models=[SimpleNamespace(model="gemma3")])
+    mocked_lmstudio_response = SimpleNamespace(
+        status_code=200,
+        json=lambda: {"data": [{"id": "meta-llama-3-8b-instruct"}]},
+        raise_for_status=lambda: None
+    )
+
+    with patch("ollama.Client.list", return_value=mocked_ollama_response):
+        with patch("httpx.get", return_value=mocked_lmstudio_response):
+            from kllama import fetch_lmstudio_models
+            fetch_lmstudio_models.clear()
+            app = AppTest.from_file(str(app_path))
+            app.session_state["provider_lmstudio"] = True
+            app.session_state["provider_ollama"] = True
+            app.run()
+
+    assert not app.exception
+    assert app.session_state["selected_model"] != ""
+

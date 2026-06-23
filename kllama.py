@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import uuid
 import datetime
+import json
 from pathlib import Path
 from typing import Iterator
 
@@ -26,12 +27,13 @@ from kllama_core import (
 )
 
 DEFAULT_OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+DEFAULT_LMSTUDIO_HOST = os.getenv("LMSTUDIO_HOST", "http://localhost:1234")
 DEFAULT_SYSTEM_PROMPT = (
     "You are Kllama, a helpful local AI assistant for students, builders, and "
     "researchers. Respond clearly, stay grounded in the user's request, and say "
     "when you are uncertain."
 )
-# Bound every request to Ollama so a hung or model-loading server surfaces an
+# Bound every request to Ollama/LM Studio so a hung or model-loading server surfaces an
 # error instead of freezing the UI indefinitely. Overridable for slow first
 # loads of large local models.
 REQUEST_TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT", "120"))
@@ -48,6 +50,88 @@ def make_client(ollama_host: str) -> Client:
 def fetch_models(ollama_host: str) -> list[str]:
     response = make_client(ollama_host).list()
     return list_model_names(response)
+
+
+@st.cache_data(ttl=15, show_spinner=False)
+def fetch_lmstudio_models(lmstudio_host: str) -> list[str]:
+    host = lmstudio_host.strip() or DEFAULT_LMSTUDIO_HOST
+    if not host.startswith("http://") and not host.startswith("https://"):
+        host = f"http://{host}"
+    
+    base_url = host.rstrip("/")
+    if not base_url.endswith("/v1") and "/v1/" not in base_url:
+        models_url = f"{base_url}/v1/models"
+    else:
+        models_url = f"{base_url}/models"
+
+    response = httpx.get(models_url, timeout=5.0)
+    response.raise_for_status()
+    data = response.json()
+    
+    names = []
+    for item in data.get("data", []):
+        model_id = item.get("id")
+        if model_id:
+            names.append(str(model_id))
+    return sorted(names)
+
+
+def stream_reply_lmstudio(
+    lmstudio_host: str,
+    model_name: str,
+    messages: list[dict[str, str]],
+    system_prompt: str,
+    options: dict[str, float | int],
+) -> Iterator[str]:
+    payload = build_chat_payload(messages, system_prompt)
+    
+    max_tokens = options.get("num_predict")
+    temperature = options.get("temperature")
+    top_p = options.get("top_p")
+    
+    body = {
+        "model": model_name,
+        "messages": payload,
+        "temperature": temperature,
+        "top_p": top_p,
+        "stream": True,
+    }
+    if max_tokens is not None:
+        body["max_tokens"] = max_tokens
+        
+    host = lmstudio_host.strip() or DEFAULT_LMSTUDIO_HOST
+    if not host.startswith("http://") and not host.startswith("https://"):
+        host = f"http://{host}"
+        
+    base_url = host.rstrip("/")
+    if not base_url.endswith("/v1") and "/v1/" not in base_url:
+        chat_url = f"{base_url}/v1/chat/completions"
+    else:
+        chat_url = f"{base_url}/chat/completions"
+        
+    wrote_any = False
+    try:
+        with httpx.stream("POST", chat_url, json=body, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+            response.raise_for_status()
+            for line in response.iter_lines():
+                if line.startswith("data: "):
+                    content = line[6:].strip()
+                    if content == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(content)
+                        delta = chunk.get("choices", [{}])[0].get("delta", {})
+                        text = delta.get("content", "")
+                        if text:
+                            wrote_any = True
+                            yield text
+                    except Exception:
+                        continue
+    except Exception as error:
+        if not wrote_any:
+            raise
+        yield f"\n\n_Response interrupted: {error}_"
+
 
 
 def reset_conversation() -> None:
@@ -323,6 +407,13 @@ def main() -> None:
         st.session_state["translator_result"] = ""
     if "show_translator" not in st.session_state:
         st.session_state["show_translator"] = True
+    if "provider_ollama" not in st.session_state:
+        st.session_state["provider_ollama"] = True
+    if "provider_lmstudio" not in st.session_state:
+        st.session_state["provider_lmstudio"] = False
+    if "lmstudio_host" not in st.session_state:
+        st.session_state["lmstudio_host"] = DEFAULT_LMSTUDIO_HOST
+
 
     # Process pending chat load before rendering any widgets
     if st.session_state["pending_chat_load"] is not None:
@@ -353,9 +444,39 @@ def main() -> None:
     st.markdown('<div class="header-divider"></div>', unsafe_allow_html=True)
 
     models: list[str] = []
-    host = st.session_state["ollama_host"].strip() or DEFAULT_OLLAMA_HOST
-    client = make_client(host)
-    is_connected = False
+    ollama_enabled = st.session_state.get("provider_ollama", True)
+    lmstudio_enabled = st.session_state.get("provider_lmstudio", False)
+    
+    ollama_host = st.session_state.get("ollama_host", DEFAULT_OLLAMA_HOST).strip()
+    lmstudio_host = st.session_state.get("lmstudio_host", DEFAULT_LMSTUDIO_HOST).strip()
+    
+    ollama_connected = False
+    lmstudio_connected = False
+    
+    client = make_client(ollama_host)
+    
+    ollama_models = []
+    if ollama_enabled:
+        try:
+            ollama_models = fetch_models(ollama_host)
+            ollama_connected = True
+        except OLLAMA_ERRORS:
+            pass
+            
+    lmstudio_models = []
+    if lmstudio_enabled:
+        try:
+            lmstudio_models = fetch_lmstudio_models(lmstudio_host)
+            lmstudio_connected = True
+        except Exception:
+            pass
+
+    for m in ollama_models:
+        models.append(f"[Ollama] {m}")
+    for m in lmstudio_models:
+        models.append(f"[LM Studio] {m}")
+
+    is_connected = (ollama_enabled and ollama_connected) or (lmstudio_enabled and lmstudio_connected)
 
     with st.sidebar:
         # Theme toggle at the top of the sidebar
@@ -369,35 +490,69 @@ def main() -> None:
 
         with st.expander("👤 Session Settings", expanded=True):
             st.text_input("Username", key="username")
-            st.text_input(
-                "Ollama host",
-                key="ollama_host",
-                help="Use the default local server or point to another Ollama-compatible endpoint.",
-            )
             st.checkbox("Show Translator Tab", key="show_translator")
+            
+            st.markdown("---")
+            st.markdown("##### Local AI Providers")
+            st.checkbox("Ollama", key="provider_ollama")
+            if st.session_state.get("provider_ollama", True):
+                st.text_input(
+                    "Ollama host",
+                    key="ollama_host",
+                    help="Use the default local server or point to another Ollama-compatible endpoint.",
+                )
+                
+            st.checkbox("LM Studio", key="provider_lmstudio")
+            if st.session_state.get("provider_lmstudio", False):
+                st.text_input(
+                    "LM Studio host",
+                    key="lmstudio_host",
+                    help="Use the default local LM Studio API endpoint.",
+                )
+                
             if st.button("Refresh models", use_container_width=True):
                 fetch_models.clear()
+                fetch_lmstudio_models.clear()
+                st.rerun()
 
-            try:
-                host = st.session_state["ollama_host"].strip() or DEFAULT_OLLAMA_HOST
-                client = make_client(host)
-                models = fetch_models(host)
-                is_connected = True
-            except OLLAMA_ERRORS as error:
-                st.error(f"Unable to load models from Ollama: {error}")
-
-            if models:
-                if st.session_state["selected_model"] not in models:
-                    st.session_state["selected_model"] = models[0]
-                st.selectbox(
-                    "Model",
-                    models,
-                    key="selected_model",
-                    help="The selected model is used for every prompt in this session.",
+            st.markdown("---")
+             # Professional connection state warning cards
+            if ollama_enabled and not ollama_connected:
+                st.error(
+                    "**Ollama is unreachable**\n\n"
+                    "Please check that Ollama is running and accessible. "
+                    "If you haven't installed it, [Download Ollama here](https://ollama.com)."
                 )
-            else:
+                
+            if lmstudio_enabled and not lmstudio_connected:
+                st.error(
+                    "**LM Studio is unreachable**\n\n"
+                    "Please check that LM Studio is running and the Local Server is started. "
+                    "If you haven't installed it, [Download LM Studio here](https://lmstudio.ai)."
+                )
+
+            if not ollama_enabled and not lmstudio_enabled:
+                st.warning("Please enable at least one local AI provider.")
+                st.selectbox("Model", ["No providers enabled"], disabled=True)
+            elif (ollama_enabled and not ollama_connected) and (lmstudio_enabled and not lmstudio_connected):
                 st.selectbox("Model", ["No models detected"], disabled=True)
-                st.info("Start Ollama and pull a model such as `ollama pull gemma3`.")
+            elif ollama_enabled and not ollama_connected and not lmstudio_enabled:
+                st.selectbox("Model", ["No models detected"], disabled=True)
+            elif lmstudio_enabled and not lmstudio_connected and not ollama_enabled:
+                st.selectbox("Model", ["No models detected"], disabled=True)
+            else:
+                if models:
+                    if st.session_state["selected_model"] not in models:
+                        st.session_state["selected_model"] = models[0]
+                    st.selectbox(
+                        "Model",
+                        models,
+                        key="selected_model",
+                        help="The selected model is used for every prompt in this session.",
+                    )
+                else:
+                    st.selectbox("Model", ["No models found on server(s)"], disabled=True)
+
 
         with st.expander("⚙️ Advanced Parameters", expanded=False):
             temperature = st.slider("Temperature", min_value=0.0, max_value=2.0, value=0.7, step=0.1)
@@ -470,18 +625,42 @@ def main() -> None:
         metrics[2].metric("Model", selected_model or "Unavailable")
 
         # Dynamic status bar with breathing animation dot
-        if is_connected:
+        current_model = st.session_state.get("selected_model", "")
+        active_provider = ""
+        active_host = ""
+        is_active_connected = False
+        
+        if current_model.startswith("[Ollama] ") and ollama_connected:
+            is_active_connected = True
+            active_provider = "Ollama"
+            active_host = ollama_host
+        elif current_model.startswith("[LM Studio] ") and lmstudio_connected:
+            is_active_connected = True
+            active_provider = "LM Studio"
+            active_host = lmstudio_host
+
+        if is_active_connected:
+            raw_model = current_model.split("] ", 1)[1]
             status_html = f"""
             <div class="status-bar status-connected">
                 <span class="status-dot dot-online"></span>
-                <span class="status-text">Connected to host <code>{host}</code> using model <code>{selected_model or 'None'}</code>. Streaming responses.</span>
+                <span class="status-text">Connected: using {active_provider} model <code>{raw_model}</code> at <code>{active_host}</code>. Streaming responses.</span>
             </div>
             """
         else:
+            if not ollama_enabled and not lmstudio_enabled:
+                status_text = "No local AI providers enabled. Please enable Ollama or LM Studio in Session Settings."
+            elif ollama_enabled and lmstudio_enabled:
+                status_text = f"Disconnected: Both Ollama (at {ollama_host}) and LM Studio (at {lmstudio_host}) are offline. Please verify your local servers are running."
+            elif ollama_enabled:
+                status_text = f"Disconnected: Ollama (at {ollama_host}) is offline. Please check that Ollama is running."
+            else:
+                status_text = f"Disconnected: LM Studio (at {lmstudio_host}) is offline. Please check that LM Studio is running and its local server is started."
+                
             status_html = f"""
             <div class="status-bar status-disconnected">
                 <span class="status-dot dot-offline"></span>
-                <span class="status-text">Disconnected from Ollama server at <code>{host}</code>. Please check server status.</span>
+                <span class="status-text"><strong>Offline:</strong> {status_text}</span>
             </div>
             """
         st.markdown(status_html, unsafe_allow_html=True)
@@ -492,7 +671,7 @@ def main() -> None:
 
         if prompt := st.chat_input(
             "Ask Kllama something",
-            disabled=not bool(selected_model),
+            disabled=not is_active_connected,
         ):
             if st.session_state.get("current_chat_id") is None:
                 st.session_state["current_chat_id"] = f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
@@ -512,21 +691,38 @@ def main() -> None:
 
             with st.chat_message("assistant"):
                 try:
-                    response_text = st.write_stream(
-                        stream_reply(
-                            client,
-                            selected_model,
-                            st.session_state["messages"],
-                            st.session_state["system_prompt"],
-                            generation_options,
+                    if selected_model.startswith("[Ollama] "):
+                        raw_model = selected_model[len("[Ollama] "):]
+                        response_text = st.write_stream(
+                            stream_reply(
+                                client,
+                                raw_model,
+                                st.session_state["messages"],
+                                st.session_state["system_prompt"],
+                                generation_options,
+                            )
                         )
-                    )
-                except OLLAMA_ERRORS as error:
+                    elif selected_model.startswith("[LM Studio] "):
+                        raw_model = selected_model[len("[LM Studio] "):]
+                        response_text = st.write_stream(
+                            stream_reply_lmstudio(
+                                lmstudio_host,
+                                raw_model,
+                                st.session_state["messages"],
+                                st.session_state["system_prompt"],
+                                generation_options,
+                            )
+                        )
+                    else:
+                        response_text = "No valid model selected."
+                        st.error(response_text)
+                except Exception as error:
                     response_text = (
-                        "I could not get a response from Ollama. Please verify that the server "
-                        f"is running and the model is available. Details: {error}"
+                        "Failed to communicate with the local AI server. Please verify that the "
+                        f"server is running. (Error: {error})"
                     )
                     st.error(response_text)
+
 
             st.session_state["messages"].append({"role": "assistant", "content": response_text})
             save_chat_history(
@@ -626,7 +822,7 @@ def main() -> None:
                     st.session_state["translator_result"] = ""
                     st.rerun()
             with col_trans:
-                is_trans_disabled = not bool(selected_model) or not src_text.strip()
+                is_trans_disabled = not is_active_connected or not src_text.strip()
                 if st.button("Translate 🌐", key="translator_submit_btn", type="primary", use_container_width=True, disabled=is_trans_disabled):
                     try:
                         # Build the request messages using the core utility function
@@ -639,31 +835,51 @@ def main() -> None:
                         
                         # Show spinner and run translation with stream=True
                         with st.spinner("Translating..."):
-                            stream = client.chat(
-                                model=selected_model,
-                                messages=translation_payload,
-                                options={"temperature": 0.3},
-                                stream=True,
-                            )
-                            
                             translated_text = ""
-                            for chunk in stream:
-                                chunk_text = extract_message_text(chunk)
-                                if chunk_text:
-                                    translated_text += chunk_text
-                                    target_placeholder.text_area(
-                                        "Translation Result",
-                                        value=translated_text,
-                                        height=200,
-                                        disabled=True,
-                                    )
+                            if selected_model.startswith("[Ollama] "):
+                                raw_model = selected_model[len("[Ollama] "):]
+                                stream = client.chat(
+                                    model=raw_model,
+                                    messages=translation_payload,
+                                    options={"temperature": 0.3},
+                                    stream=True,
+                                )
+                                for chunk in stream:
+                                    chunk_text = extract_message_text(chunk)
+                                    if chunk_text:
+                                        translated_text += chunk_text
+                                        target_placeholder.text_area(
+                                            "Translation Result",
+                                            value=translated_text,
+                                            height=200,
+                                            disabled=True,
+                                        )
+                            elif selected_model.startswith("[LM Studio] "):
+                                raw_model = selected_model[len("[LM Studio] "):]
+                                stream = stream_reply_lmstudio(
+                                    lmstudio_host,
+                                    raw_model,
+                                    translation_payload,
+                                    "",  # no system prompt since payload is custom built
+                                    {"temperature": 0.3}
+                                )
+                                for chunk_text in stream:
+                                    if chunk_text:
+                                        translated_text += chunk_text
+                                        target_placeholder.text_area(
+                                            "Translation Result",
+                                            value=translated_text,
+                                            height=200,
+                                            disabled=True,
+                                        )
+                            else:
+                                raise ValueError("No valid model selected.")
                                     
                             st.session_state["translator_result"] = translated_text
                             st.rerun()
-                    except OLLAMA_ERRORS as error:
+                    except Exception as error:
                         st.error(f"Translation failed: {error}")
 
 
 if __name__ == "__main__":
     main()
-

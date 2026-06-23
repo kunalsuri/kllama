@@ -63,7 +63,18 @@ def build_chat_payload(
     prompt = system_prompt.strip()
     if prompt:
         payload.append({"role": "system", "content": prompt})
-    payload.extend(trim_history(messages, max_history_messages))
+
+    history = trim_history(messages, max_history_messages)
+
+    # Most LLM Jinja prompt templates (e.g. Qwen, Gemma) require the first
+    # non-system message to be a user turn.  The UI seeds the session with a
+    # synthetic assistant greeting so the chat window isn't empty, but that
+    # message must never be forwarded to the model or it will raise
+    # "No user query found in messages."
+    while history and history[0]["role"] == "assistant":
+        history = history[1:]
+
+    payload.extend(history)
     return payload
 
 

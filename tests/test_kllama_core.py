@@ -69,6 +69,24 @@ def test_build_chat_payload_caps_history_but_keeps_system_prompt() -> None:
     assert payload[-1] == {"role": "user", "content": "49"}
 
 
+def test_build_chat_payload_strips_leading_assistant_greeting() -> None:
+    """Regression: LM Studio / Qwen Jinja template raises 'No user query found
+    in messages' when the first non-system message is an assistant turn.
+    The UI seeds the session with a synthetic greeting; it must be stripped
+    from the API payload."""
+    messages = [
+        {"role": "assistant", "content": "How may I assist you?"},
+        {"role": "user", "content": "Where in India?"},
+    ]
+
+    payload = build_chat_payload(messages, "You are helpful.")
+
+    assert payload[0] == {"role": "system", "content": "You are helpful."}
+    # The synthetic greeting must NOT be in the payload.
+    assert payload[1] == {"role": "user", "content": "Where in India?"}
+    assert all(m["role"] != "assistant" or i > 1 for i, m in enumerate(payload))
+
+
 def test_extract_message_text_supports_dict_and_object_chunks() -> None:
     dict_chunk = {"message": {"content": "hello"}}
     object_chunk = SimpleNamespace(message=SimpleNamespace(content="world"))
